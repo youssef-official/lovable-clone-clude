@@ -22,7 +22,7 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
         const match = path.match(/\/app\/([^\/]+)\//);
         return match ? `/${match[1]}` : null;
       })
-      .filter(Boolean);
+      .filter(Boolean) as string[];
     
     setGeneratedPages([...new Set(pages)]);
   }, [messages]);
@@ -31,7 +31,7 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
   
   // Filter to show only assistant messages and tool uses
   const displayMessages = messages.filter(m => 
-    m.type === 'assistant' || m.type === 'tool_use' || m.type === 'result'
+    m.type === 'assistant' || m.type === 'result'
   );
   
   return (
@@ -76,31 +76,7 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
               );
             }
             
-            // Tool uses - show as compact status
-            if (message.type === 'tool_use') {
-              const toolName = (message as any).name;
-              const input = (message as any).input;
-              
-              return (
-                <div key={index} className="animate-fadeIn">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                    <span className="font-mono">
-                      {toolName === 'Write' && input?.file_path && 
-                        `Creating ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Edit' && input?.file_path && 
-                        `Editing ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Read' && input?.file_path && 
-                        `Reading ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Bash' && input?.command && 
-                        `Running: ${input.command.substring(0, 50)}...`}
-                      {!['Write', 'Edit', 'Read', 'Bash'].includes(toolName) && 
-                        `Using ${toolName}`}
-                    </span>
-                  </div>
-                </div>
-              );
-            }
+
             
             // Final result
             if (message.type === 'result' && (message as any).subtype === 'success') {
