@@ -1,0 +1,346 @@
+<think>
+I’m focused on providing a complete HTML file for a Tic-Tac-Toe game with a modern look, including game logic and PvP functionality. The requirements include displaying the current player turn and highlighting the winning combination. I'll ensure the code is professional and accessible, incorporating features like keyboard support and ARIA roles. It's important to implement a 3x3 grid, manage turns, and prevent overriding cells while also addressing game over scenarios and resets. Let's get this right!
+
+I’m thinking about adding a nice design for the Tic-Tac-Toe game, focusing on features like gradient backgrounds, animations, and hover effects for the cells. Highlighting winning cells with a glow and displaying a status area would be great! I’ll keep everything within a single file and consider using custom fonts, but system fonts might work better for offline execution. The logic for determining wins will involve predefined winning combinations, and I’ll ensure to display messages like "Player X wins!" or "Draw." Adding sound effects and an ARIA live region could enhance accessibility too!
+
+I’m considering using CSS grid for the board and ensuring the cells are equal in size, possibly using the aspect-ratio property. The JavaScript will remain minimal yet functional, and I plan to style the Xs and Os with distinct colors—blue for X and red for O, or maybe green for O. To create a modern look, I’ll add drop shadows and gradient backgrounds. I’ll also implement a scoreboard that shows player turns and winning messages. The code will be self-contained without external resources, ensuring no clickable cells once the game ends, but still allowing resets.
+
+I’m setting up the HTML skeleton for the Tic-Tac-Toe game. The structure includes a doctype declaration, meta tags for charset and viewport, and a title. The CSS will define color variables and styles for various elements like the body, board, cells, and status bar. I’ll create a responsive game layout with a grid for the board, ensuring the cells maintain a square aspect ratio. The JavaScript will initialize the game state, handle cell clicks, and include winning combinations and game functions. Let’s bring this together!
+
+I’m detailing the logic for updating the game status, detecting winners, and managing game resets. I’ll define winning combinations and set up event listeners for user interactions. The CSS will give the cells a stylish look, including hover effects and animations for winning cells. I'll ensure the game board maintains a square aspect ratio and utilizes modern styling techniques. Additionally, I’ll implement an accessible message system for screen readers and add features like a "Play again" button. Let's wrap this all up!
+
+I’m working on the game status message for the Tic-Tac-Toe interface. The plan is to display who won or if it’s a draw and update the status bar accordingly. I’ll include a live region for accessibility and ensure CSS styles enhance the appearance, like using a dark theme and vibrant colors. I’ll also add interactive elements like buttons and ensure the game resets properly. My goal is to finalize the complete HTML code, making sure everything is well-structured and clear for the user!
+</think>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tic-Tac-Toe</title>
+  <style>
+    :root{
+      --bg: #0f1220;
+      --panel: #141a2a;
+      --panel-2: #0e1422;
+      --text: #e6edf3;
+      --muted: #a6b3c6;
+      --accent: #5dd3ff;
+      --accent-2: #7b7bfe;
+      --x: #3fb3ff;
+      --o: #ff6b6b;
+      --win: #ffd54a;
+      --cell: #172037;
+      --cell-hover: #1c2947;
+      --shadow: 0 20px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 600px at 10% -10%, #1b2140 0%, transparent 60%),
+        radial-gradient(800px 600px at 110% 110%, #16233a 0%, transparent 60%),
+        linear-gradient(180deg, #0b0f1a 0%, #0b0f1a 60%, #0f1220 100%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 24px;
+    }
+
+    .game{
+      width: min(94vw, 520px);
+      max-width: 520px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)) padding-box,
+                  linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.05)) border-box;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      backdrop-filter: blur(6px);
+    }
+
+    h1{
+      margin: 0 0 12px;
+      font-size: clamp(22px, 3.6vw, 28px);
+      font-weight: 700;
+      letter-spacing: .4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      border: 1px solid rgba(255,255,255,.06);
+      padding: 10px 12px;
+      border-radius: 12px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: .3px;
+      color: #0b0f1a;
+      background: linear-gradient(135deg, var(--x), #9ad6ff);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 16px rgba(63,179,255,.35);
+    }
+    .badge.o{
+      background: linear-gradient(135deg, var(--o), #ff9a9a);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 4px 16px rgba(255,107,107,.35);
+    }
+
+    button#reset{
+      border: none;
+      outline: none;
+      cursor: pointer;
+      color: #0b0f1a;
+      font-weight: 700;
+      letter-spacing: .3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 8px 22px rgba(93, 211, 255, .28), inset 0 1px 0 rgba(255,255,255,.5);
+      transition: transform .06s ease, filter .2s ease;
+    }
+    button#reset:hover{ filter: brightness(1.06); }
+    button#reset:active{ transform: translateY(1px); }
+
+    .board{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .cell{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      aspect-ratio: 1 / 1;
+      background: radial-gradient(100% 120% at 50% 0%, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 60%) , var(--cell);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-weight: 900;
+      font-size: clamp(36px, 10vw, 56px);
+      letter-spacing: 1px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .08s ease, background .2s ease, box-shadow .2s ease, border-color .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .cell:hover{ background: var(--cell-hover); }
+    .cell:active{ transform: translateY(1px); }
+    .cell:focus-visible{
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .cell.x{ color: var(--x); text-shadow: 0 6px 18px rgba(63,179,255,.35); }
+    .cell.o{ color: var(--o); text-shadow: 0 6px 18px rgba(255,107,107,.35); }
+
+    .cell.win{
+      border-color: rgba(255, 213, 74, .9);
+      box-shadow:
+        0 0 0 1px rgba(255, 213, 74, .6) inset,
+        0 10px 28px rgba(255, 213, 74, .35),
+        var(--shadow);
+      position: relative;
+    }
+    .cell.win::after{
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 14px;
+      background: radial-gradient(60% 60% at 50% 50%, rgba(255,213,74,.25), transparent 70%);
+      pointer-events: none;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0% { opacity: .6; transform: scale(1); }
+      50%{ opacity: .2; transform: scale(1.04); }
+      100%{ opacity: .6; transform: scale(1); }
+    }
+
+    .footer{
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      opacity: .85;
+    }
+
+    .sr-only{
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="game" aria-label="Tic-Tac-Toe game">
+    <h1>Tic‑Tac‑Toe</h1>
+
+    <div class="topbar">
+      <div class="status" aria-live="polite" aria-atomic="true">
+        <span id="turnBadge" class="badge">X</span>
+        <span id="statusText">Player X’s turn</span>
+      </div>
+      <button id="reset" type="button" aria-label="Start a new game">New Game</button>
+    </div>
+
+    <div id="board" class="board" role="grid" aria-label="Tic-Tac-Toe board">
+      <!-- 9 cells -->
+      <button class="cell" role="gridcell" aria-label="Cell 1" data-index="0"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 2" data-index="1"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 3" data-index="2"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 4" data-index="3"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 5" data-index="4"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 6" data-index="5"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 7" data-index="6"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 8" data-index="7"></button>
+      <button class="cell" role="gridcell" aria-label="Cell 9" data-index="8"></button>
+    </div>
+
+    <p id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+
+    <div class="footer">Two players. Click a square to place your mark.</div>
+  </main>
+
+  <script>
+    (() => {
+      const cells = Array.from(document.querySelectorAll('.cell'));
+      const statusText = document.getElementById('statusText');
+      const turnBadge = document.getElementById('turnBadge');
+      const resetBtn = document.getElementById('reset');
+      const srStatus = document.getElementById('srStatus');
+
+      const winningCombos = [
+        [0,1,2],[3,4,5],[6,7,8], // rows
+        [0,3,6],[1,4,7],[2,5,8], // cols
+        [0,4,8],[2,4,6]          // diagonals
+      ];
+
+      let board = Array(9).fill(null); // null | 'X' | 'O'
+      let currentPlayer = 'X';
+      let gameActive = true;
+
+      function setStatus(message, announce = true){
+        statusText.textContent = message;
+        if (announce) srStatus.textContent = message;
+      }
+
+      function updateTurnUI(){
+        if (!gameActive) return;
+        setStatus(`Player ${currentPlayer}’s turn`);
+        turnBadge.textContent = currentPlayer;
+        turnBadge.classList.toggle('o', currentPlayer === 'O');
+      }
+
+      function handleCellClick(e){
+        const cell = e.currentTarget;
+        const index = Number(cell.dataset.index);
+
+        if (!gameActive || board[index]) return;
+
+        placeMark(cell, index, currentPlayer);
+
+        const winCombo = checkWinner();
+        if (winCombo){
+          gameActive = false;
+          highlightWin(winCombo);
+          setStatus(`Player ${currentPlayer} wins!`);
+          return;
+        }
+
+        if (board.every(Boolean)){
+          gameActive = false;
+          setStatus(`It’s a draw!`);
+          return;
+        }
+
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        updateTurnUI();
+      }
+
+      function placeMark(cell, index, player){
+        board[index] = player;
+        cell.textContent = player;
+        cell.classList.add(player.toLowerCase()); // x or o
+        cell.setAttribute('aria-disabled', 'true');
+      }
+
+      function checkWinner(){
+        for (const [a, b, c] of winningCombos){
+          const v = board[a];
+          if (v && v === board[b] && v === board[c]){
+            return [a, b, c];
+          }
+        }
+        return null;
+      }
+
+      function highlightWin(indices){
+        indices.forEach(i => cells[i].classList.add('win'));
+      }
+
+      function resetGame(){
+        board = Array(9).fill(null);
+        currentPlayer = 'X';
+        gameActive = true;
+        cells.forEach(cell => {
+          cell.textContent = '';
+          cell.classList.remove('x','o','win');
+          cell.removeAttribute('aria-disabled');
+        });
+        updateTurnUI();
+      }
+
+      // Events
+      cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+      resetBtn.addEventListener('click', resetGame);
+
+      // Keyboard hint: Enter/Space triggers click on focused cell
+      cells.forEach(cell => {
+        cell.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            cell.click();
+          }
+        });
+      });
+
+      // Init
+      updateTurnUI();
+    })();
+  </script>
+</body>
+</html>
