@@ -10,28 +10,34 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
   
   useEffect(() => {
     // Look for generated pages
-    const pages = messages
-      .filter((m: any) => 
-        m.type === 'tool_use' && 
-        m.name === 'Write' && 
-        m.input?.file_path?.includes('/app/') &&
-        (m.input?.file_path?.endsWith('.tsx') || m.input?.file_path?.endsWith('/page.tsx'))
-      )
-      .map((m: any) => {
-        const path = m.input.file_path;
-        const match = path.match(/\/app\/([^\/]+)\//);
-        return match ? `/${match[1]}` : null;
-      })
-      .filter(Boolean);
+    const pages: string[] = [];
     
-    setGeneratedPages([...new Set(pages)]);
+    messages.forEach((m: any) => {
+      if (m.type === 'assistant' && m.message?.content && Array.isArray(m.message.content)) {
+        m.message.content.forEach((block: any) => {
+          if (block.type === 'tool_use' &&
+              block.name === 'Write' &&
+              block.input?.file_path?.includes('/app/') &&
+              (block.input?.file_path?.endsWith('.tsx') || block.input?.file_path?.endsWith('/page.tsx'))) {
+
+            const path = block.input.file_path;
+            const match = path.match(/\/app\/([^\/]+)\//);
+            if (match) {
+              pages.push(`/${match[1]}`);
+            }
+          }
+        });
+      }
+    });
+
+    setGeneratedPages(Array.from(new Set(pages)));
   }, [messages]);
   
   if (messages.length === 0) return null;
   
   // Filter to show only assistant messages and tool uses
   const displayMessages = messages.filter(m => 
-    m.type === 'assistant' || m.type === 'tool_use' || m.type === 'result'
+    m.type === 'assistant' || m.type === 'result'
   );
   
   return (
@@ -77,29 +83,39 @@ export default function MessageDisplay({ messages }: MessageDisplayProps) {
             }
             
             // Tool uses - show as compact status
-            if (message.type === 'tool_use') {
-              const toolName = (message as any).name;
-              const input = (message as any).input;
-              
-              return (
-                <div key={index} className="animate-fadeIn">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                    <span className="font-mono">
-                      {toolName === 'Write' && input?.file_path && 
-                        `Creating ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Edit' && input?.file_path && 
-                        `Editing ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Read' && input?.file_path && 
-                        `Reading ${input.file_path.split('/').pop()}`}
-                      {toolName === 'Bash' && input?.command && 
-                        `Running: ${input.command.substring(0, 50)}...`}
-                      {!['Write', 'Edit', 'Read', 'Bash'].includes(toolName) && 
-                        `Using ${toolName}`}
-                    </span>
-                  </div>
-                </div>
-              );
+            // Note: Tool uses are part of assistant messages content now
+            if (message.type === 'assistant' && (message as any).message?.content) {
+               const content = (message as any).message.content;
+               if (Array.isArray(content)) {
+                 const toolBlocks = content.filter((c: any) => c.type === 'tool_use');
+                 if (toolBlocks.length > 0) {
+                    return (
+                        <div key={`${index}-tools`} className="animate-fadeIn space-y-2">
+                            {toolBlocks.map((block: any, toolIdx: number) => {
+                                const toolName = block.name;
+                                const input = block.input;
+                                return (
+                                    <div key={toolIdx} className="flex items-center gap-2 text-sm text-gray-500">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                        <span className="font-mono">
+                                        {toolName === 'Write' && input?.file_path &&
+                                            `Creating ${input.file_path.split('/').pop()}`}
+                                        {toolName === 'Edit' && input?.file_path &&
+                                            `Editing ${input.file_path.split('/').pop()}`}
+                                        {toolName === 'Read' && input?.file_path &&
+                                            `Reading ${input.file_path.split('/').pop()}`}
+                                        {toolName === 'Bash' && input?.command &&
+                                            `Running: ${input.command.substring(0, 50)}...`}
+                                        {!['Write', 'Edit', 'Read', 'Bash'].includes(toolName) &&
+                                            `Using ${toolName}`}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )
+                 }
+               }
             }
             
             // Final result
